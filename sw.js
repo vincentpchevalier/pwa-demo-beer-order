@@ -1,7 +1,6 @@
 const version = 1;
 const cacheName = `app-cache-v${version}`;
 let appCache = null;
-let isOnline = true;
 
 const cacheFiles = [
 	'./',
@@ -52,5 +51,42 @@ self.addEventListener('activate', (ev) => {
 
 self.addEventListener('fetch', (ev) => {
 	console.log(`Fetching ${ev.request.url}`);
+	let isOnline = navigator.onLine;
+
+	let url = new URL(ev.request.url);
+
+	let hostname = url.hostname;
+	console.log(hostname);
+
+	let isFont =
+		hostname.includes('fonts.gstatic.com') ||
+		hostname.includes('fonts.googleapis.com');
+
+	let isData = hostname.includes('random-data-api.com');
+
+	if (isOnline) {
+		if (isFont) {
+			console.log(
+				`Requesting asset at ${ev.request.url}. Checking if asset is cached. If not, fetching it and caching it.`
+			);
+			ev.respondWith(
+				caches
+					.match(ev.request)
+					.then((cacheResponse) => {
+						let fetchResponse = fetch(ev.request, {
+							mode: 'cors',
+							credentials: 'omit',
+						}).then((response) => {
+							if (!response.ok) throw Error(response.statusText);
+							console.log(`Fetching and caching asset`);
+							appCache.put(ev.request, response.clone());
+							return response;
+						});
+						return cacheResponse || fetchResponse;
+					})
+					.catch((error) => console.error(error))
+			);
+		}
+	}
 });
 self.addEventListener('message', (ev) => {});
