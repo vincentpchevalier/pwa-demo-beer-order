@@ -10,6 +10,23 @@ function init() {
 			console.log(datacache);
 		})
 		.catch((error) => console.log(error));
+
+	registerServiceWorker();
+}
+
+function registerServiceWorker() {
+	if ('serviceWorker' in navigator) {
+		navigator.serviceWorker
+			.register('./sw.js')
+			.then(() => {
+				console.log('Service worker registered');
+			})
+			.catch((error) => {
+				console.log('Service worker registration failed', error);
+			});
+	} else {
+		console.log('Service workers not supported');
+	}
 }
 
 document.addEventListener('DOMContentLoaded', init);
