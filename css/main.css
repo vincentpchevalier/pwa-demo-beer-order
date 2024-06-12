@@ -1,0 +1,18 @@
+body {
+	font-size: 1.4rem;
+}
+
+.people-page {
+	background-color: linen;
+	color: navy;
+}
+
+.orders-page {
+	background-color: mintcream;
+	color: darkgreen;
+}
+
+.four-oh-four-page {
+	background-color: navajowhite;
+	color: firebrick;
+}
