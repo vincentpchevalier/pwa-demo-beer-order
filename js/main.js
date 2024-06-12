@@ -1,6 +1,7 @@
 import { openCache } from './cache.js';
 
 let datacache = null;
+let isOnline = 'online' in navigator && navigator.onLine;
 
 function init() {
 	console.log('App initialized');
@@ -12,6 +13,7 @@ function init() {
 		.catch((error) => console.log(error));
 
 	registerServiceWorker();
+	addListeners();
 }
 
 function registerServiceWorker() {
@@ -28,6 +30,8 @@ function registerServiceWorker() {
 		console.log('Service workers not supported');
 	}
 }
+
+function addListeners() {}
 
 document.addEventListener('DOMContentLoaded', init);
 

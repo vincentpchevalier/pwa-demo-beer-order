@@ -44,3 +44,14 @@ self.addEventListener('activate', (ev) => {
 			)
 	);
 });
+
+// Online / offline events
+self.addEventListener('online', () => {
+	console.log('Online now!');
+	isOnline = true;
+});
+
+self.addEventListener('offline', () => {
+	console.log('Oops, offline!');
+	isOnline = false;
+});
