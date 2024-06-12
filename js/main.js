@@ -1,8 +1,8 @@
 import { openCache } from './cache.js';
 
+const randomDataApiUrl = 'https://random-data-api.com/api/v2/users';
 let datacache = null;
 let SW = null;
-const randomDataApiUrl = 'https://random-data-api.com/api/v2/users';
 let isOnline = 'onLine' in navigator && navigator.onLine;
 
 function init() {
@@ -15,7 +15,9 @@ function init() {
 		.catch((error) => console.log(error));
 
 	registerServiceWorker();
+
 	addListeners();
+
 	fetchData(randomDataApiUrl, 10)
 		.then((users) => {
 			console.log(users);
@@ -44,25 +46,16 @@ async function fetchData(url, size) {
 		});
 
 		const filename = `${crypto.randomUUID()}-users.json`;
+
 		const blob = new Blob([JSON.stringify(users)], {
 			type: 'application/json',
 		});
+
 		const responseForCache = new Response(blob, {
 			headers: { 'Content-Type': 'application/json' },
 		});
 
 		const request = new Request(filename);
-		// const filename = `${crypto.randomUUID()}-users.json`;
-		// const file = new File([JSON.stringify(users)], filename, {
-		// 	type: 'application/json',
-		// });
-
-		// const fileUrl = URL.createObjectURL(file);
-
-		// const request = new Request(fileUrl);
-		// const responseForCache = new Response(request, {
-		// 	headers: { 'Content-Type': 'application/json' },
-		// });
 
 		await datacache.put(request.url, responseForCache.clone());
 
