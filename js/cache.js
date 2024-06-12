@@ -1,9 +1,15 @@
-const cacheName = `data-cache`;
+const version = 8;
+const cacheName = `data-cache-v${version}`;
 let cache = null;
 
 async function openCache() {
-	console.log('Opening cache');
-	return cache ? `Opened ${cacheName}` : `Failed to open ${cacheName}`;
+	try {
+		console.log('Opening cache');
+		cache = await caches.open(cacheName);
+		return cache;
+	} catch (error) {
+		console.log(error);
+	}
 }
 
 export { openCache };

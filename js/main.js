@@ -2,6 +2,7 @@ import { openCache } from './cache.js';
 
 let datacache = null;
 let SW = null;
+const randomDataApiUrl = 'https://random-data-api.com/api/v2/users';
 let isOnline = 'onLine' in navigator && navigator.onLine;
 
 function init() {
@@ -15,7 +16,60 @@ function init() {
 
 	registerServiceWorker();
 	addListeners();
+	fetchData(randomDataApiUrl, 10)
+		.then((users) => {
+			console.log(users);
+			// loadUsers(users);
+		})
+		.catch((error) => console.log(error));
 	showContent();
+}
+
+async function fetchData(url, size) {
+	try {
+		// fetch data from url with size
+		const apiUrl = new URL(url);
+		apiUrl.searchParams.set('size', size);
+		console.log(apiUrl.href);
+
+		const response = await fetch(apiUrl.href, {});
+		const data = await response.json();
+
+		const users = data.map((user) => {
+			return {
+				fullName: user.first_name + ' ' + user.last_name,
+				id: user.id,
+				image: user.avatar,
+			};
+		});
+
+		const filename = `${crypto.randomUUID()}-users.json`;
+		const blob = new Blob([JSON.stringify(users)], {
+			type: 'application/json',
+		});
+		const responseForCache = new Response(blob, {
+			headers: { 'Content-Type': 'application/json' },
+		});
+
+		const request = new Request(filename);
+		// const filename = `${crypto.randomUUID()}-users.json`;
+		// const file = new File([JSON.stringify(users)], filename, {
+		// 	type: 'application/json',
+		// });
+
+		// const fileUrl = URL.createObjectURL(file);
+
+		// const request = new Request(fileUrl);
+		// const responseForCache = new Response(request, {
+		// 	headers: { 'Content-Type': 'application/json' },
+		// });
+
+		await datacache.put(request.url, responseForCache.clone());
+
+		return users;
+	} catch (error) {
+		// Handle error
+	}
 }
 
 function registerServiceWorker() {

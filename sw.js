@@ -1,6 +1,6 @@
-const version = 1;
+const version = 8;
 const appCacheName = `app-cache-v${version}`;
-const dataCacheName = `data-cache`;
+const dataCacheName = `data-cache-v${version}`;
 let appCache = null;
 
 const cacheFiles = [
@@ -52,6 +52,7 @@ self.addEventListener('activate', (ev) => {
 
 self.addEventListener('fetch', (ev) => {
 	console.log(`Fetching ${ev.request.url}`);
+	console.log(ev.request);
 	let isOnline = navigator.onLine;
 
 	let url = new URL(ev.request.url);
