@@ -1,5 +1,8 @@
 const version = 1;
 const cacheName = `app-cache-v${version}`;
+let appCache = null;
+let isOnline = true;
+
 const cacheFiles = [
 	'./',
 	'./index.html',
@@ -10,20 +13,22 @@ const cacheFiles = [
 ];
 
 self.addEventListener('install', (ev) => {
-	console.log('Installing service worker. Opening cache.');
+	console.log('Installing service worker. Opening cache and adding app files.');
 	ev.waitUntil(
 		caches
 			.open(cacheName)
 			.then((cache) => {
-				console.log('App cache opened.');
+				appCache = cache;
 				cache.addAll(cacheFiles);
+				console.log('App cache opened and files added.');
+				console.log('app cache: ', appCache);
 			})
 			.catch((err) => console.error(err))
 	);
 });
 
 self.addEventListener('activate', (ev) => {
-	console.log('Activating service worker');
+	console.log('Activating service worker and clearing old app cache files.');
 
 	ev.waitUntil(
 		caches
@@ -33,25 +38,19 @@ self.addEventListener('activate', (ev) => {
 					cacheNames
 						.filter((name) => name !== cacheName)
 						.map((name) => {
-							console.log('Deleting cache', name);
 							caches.delete(name);
+							console.log(`Deleting ${name} cache`);
 						})
 				);
 			})
 			.catch((err) => console.error(err))
-			.finally(() =>
-				console.log('New service worker activated. Cache cleared.')
-			)
+			.finally(() => {
+				console.log('New service worker activated. Cache cleared.');
+			})
 	);
 });
 
-// Online / offline events
-self.addEventListener('online', () => {
-	console.log('Online now!');
-	isOnline = true;
+self.addEventListener('fetch', (ev) => {
+	console.log(`Fetching ${ev.request.url}`);
 });
-
-self.addEventListener('offline', () => {
-	console.log('Oops, offline!');
-	isOnline = false;
-});
+self.addEventListener('message', (ev) => {});
