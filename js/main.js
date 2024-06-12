@@ -15,7 +15,6 @@ function init() {
 
 	registerServiceWorker();
 	addListeners();
-	console.log('online' in navigator, navigator.onLine);
 	showContent();
 }
 
@@ -63,7 +62,6 @@ function addListeners() {
 }
 
 function showContent() {
-	console.log(isOnline);
 	if (isOnline) {
 		document.getElementById('content').innerHTML = `
       <h2>Beers</h2>
