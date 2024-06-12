@@ -1,4 +1,4 @@
-const version = 8;
+const version = 9;
 const cacheName = `data-cache-v${version}`;
 let cache = null;
 
