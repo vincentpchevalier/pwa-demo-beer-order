@@ -1,5 +1,6 @@
 const version = 1;
-const cacheName = `app-cache-v${version}`;
+const appCacheName = `app-cache-v${version}`;
+const dataCacheName = `data-cache`;
 let appCache = null;
 
 const cacheFiles = [
@@ -12,10 +13,10 @@ const cacheFiles = [
 ];
 
 self.addEventListener('install', (ev) => {
-	console.log('Installing service worker. Opening cache and adding app files.');
+	console.log('Installing service worker. Opening app cache and adding files.');
 	ev.waitUntil(
 		caches
-			.open(cacheName)
+			.open(appCacheName)
 			.then((cache) => {
 				appCache = cache;
 				cache.addAll(cacheFiles);
@@ -27,7 +28,7 @@ self.addEventListener('install', (ev) => {
 });
 
 self.addEventListener('activate', (ev) => {
-	console.log('Activating service worker and clearing old app cache files.');
+	console.log('Activating service worker and clearing unneeded cache files.');
 
 	ev.waitUntil(
 		caches
@@ -35,7 +36,7 @@ self.addEventListener('activate', (ev) => {
 			.then((cacheNames) => {
 				return Promise.all(
 					cacheNames
-						.filter((name) => name !== cacheName)
+						.filter((name) => name !== appCacheName && name !== dataCacheName)
 						.map((name) => {
 							caches.delete(name);
 							console.log(`Deleting ${name} cache`);
@@ -44,7 +45,7 @@ self.addEventListener('activate', (ev) => {
 			})
 			.catch((err) => console.error(err))
 			.finally(() => {
-				console.log('New service worker activated. Cache cleared.');
+				console.log('Service worker activated. Cache cleared of old files.');
 			})
 	);
 });
@@ -58,11 +59,14 @@ self.addEventListener('fetch', (ev) => {
 	let hostname = url.hostname;
 	console.log(hostname);
 
+	let pathname = url.pathname;
+
 	let isFont =
 		hostname.includes('fonts.gstatic.com') ||
 		hostname.includes('fonts.googleapis.com');
 
-	let isData = hostname.includes('random-data-api.com');
+	let isData =
+		hostname.includes('random-data-api.com') || pathname.includes('.json');
 
 	if (isOnline) {
 		if (isFont) {
@@ -86,7 +90,42 @@ self.addEventListener('fetch', (ev) => {
 					})
 					.catch((error) => console.error(error))
 			);
+		} else if (isData) {
+			let url = new URL(ev.request.url);
+			console.log(
+				`Requesting data at ${url.pathname}. Checking if data is cached. If not, fetching it and caching it.`
+			);
+			ev.respondWith(
+				fetch(url, { mode: 'cors', credentials: 'omit' })
+					.then((fetchResponse) => {
+						if (!fetchResponse.ok) throw Error(fetchResponse.status);
+						return caches.open(dataCacheName).then((cache) => {
+							cache.put(ev.request, fetchResponse.clone());
+							return fetchResponse;
+						});
+					})
+					.catch((error) => {
+						return caches
+							.match(ev.request)
+							.then(
+								(cacheResponse) =>
+									cacheResponse ||
+									new Response('No data found', { status: error })
+							);
+					})
+			);
+		}
+	}
+
+	if (!isOnline) {
+		if (isData) {
+			ev.respondWith(
+				caches.match(ev.request).then((cacheResponse) => {
+					return cacheResponse || new Response('No data found');
+				})
+			);
 		}
 	}
 });
+
 self.addEventListener('message', (ev) => {});
