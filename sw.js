@@ -1,4 +1,4 @@
-const version = 8;
+const version = 9;
 const appCacheName = `app-cache-v${version}`;
 const dataCacheName = `data-cache-v${version}`;
 let appCache = null;
@@ -70,52 +70,65 @@ self.addEventListener('fetch', (ev) => {
 		hostname.includes('random-data-api.com') || pathname.includes('.json');
 
 	if (isOnline) {
-		if (isFont) {
+		if (isFont || isData) {
 			console.log(
 				`Requesting asset at ${ev.request.url}. Checking if asset is cached. If not, fetching it and caching it.`
 			);
+			// cache first, then network
 			ev.respondWith(
 				caches
 					.match(ev.request)
 					.then((cacheResponse) => {
-						let fetchResponse = fetch(ev.request, {
+						let networkResponse = fetch(ev.request, {
 							mode: 'cors',
 							credentials: 'omit',
 						}).then((response) => {
+							console.log(
+								`Fetching and caching ${isData ? 'data' : 'app'} asset`
+							);
+
 							if (!response.ok) throw Error(response.statusText);
-							console.log(`Fetching and caching asset`);
-							appCache.put(ev.request, response.clone());
-							return response;
+
+							let cacheName = isData ? dataCacheName : appCacheName;
+
+							return caches.open(cacheName).then((cache) => {
+								cache.put(ev.request, response.clone());
+								return response;
+							});
 						});
-						return cacheResponse || fetchResponse;
+						// return a response from the cache if it exists, otherwise return the network response
+						return cacheResponse || networkResponse;
 					})
 					.catch((error) => console.error(error))
 			);
-		} else if (isData) {
-			let url = new URL(ev.request.url);
-			console.log(
-				`Requesting data at ${url.pathname}. Checking if data is cached. If not, fetching it and caching it.`
-			);
-			ev.respondWith(
-				fetch(url, { mode: 'cors', credentials: 'omit' })
-					.then((fetchResponse) => {
-						if (!fetchResponse.ok) throw Error(fetchResponse.status);
-						return caches.open(dataCacheName).then((cache) => {
-							cache.put(ev.request, fetchResponse.clone());
-							return fetchResponse;
-						});
-					})
-					.catch((error) => {
-						return caches
-							.match(ev.request)
-							.then(
-								(cacheResponse) =>
-									cacheResponse ||
-									new Response('No data found', { status: error })
-							);
-					})
-			);
 		}
+
+		// network request first
+		// if (isData) {
+		// 	let url = new URL(ev.request.url);
+		// 	console.log(
+		// 		`Requesting data at ${url.pathname}. Checking if data is cached. If not, fetching it and caching it.`
+		// 	);
+		// 	ev.respondWith(
+		// 		fetch(url, { mode: 'cors', credentials: 'omit' })
+		// 			.then((fetchResponse) => {
+		// 				if (!fetchResponse.ok) throw Error(fetchResponse.status);
+		// 				return caches.open(dataCacheName).then((cache) => {
+		// 					cache.put(ev.request, fetchResponse.clone());
+		// 					return fetchResponse;
+		// 				});
+		// 			})
+		// 			.catch((error) => {
+		// 				return caches
+		// 					.match(ev.request)
+		// 					.then(
+		// 						(cacheResponse) =>
+		// 							cacheResponse ||
+		// 							new Response('No data found', { status: error })
+		// 					);
+		// 			})
+		// 	);
+		// }
 	}
 
 	if (!isOnline) {
